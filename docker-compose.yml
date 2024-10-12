@@ -1,4 +1,4 @@
-version: '3.8'  # Ensure you're using version 3.8 or above
+version: '3.8' 
 
 services:
   db:
@@ -21,7 +21,7 @@ services:
     image: redis:alpine
     networks:
       - backend
-    healthcheck:  # Added health check for Redis
+    healthcheck:  
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
