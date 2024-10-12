@@ -1,0 +1,96 @@
+version: '3.8'  # Ensure you're using version 3.8 or above
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: scheduler_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    networks:
+      - backend
+    healthcheck:  # Added health check for Redis
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_DB=scheduler_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=task_scheduler.settings
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+  celery:
+    build: .
+    command: celery -A task_scheduler worker --loglevel=info --autoscale=10,3
+    volumes:
+      - .:/code
+    environment:
+      - POSTGRES_DB=scheduler_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=task_scheduler.settings
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+  celery-beat:
+    build: .
+    command: celery -A task_scheduler beat --loglevel=info
+    volumes:
+      - .:/code
+    environment:
+      - POSTGRES_DB=scheduler_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=task_scheduler.settings
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
