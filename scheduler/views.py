@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from datetime import datetime, timedelta
 from rest_framework import status, viewsets
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -84,12 +85,29 @@ class TimeTrackingView(viewsets.ViewSet):
 
     def partial_update(self, request, pk=None):
         task = Task.objects.get(pk=pk, user=request.user)
-        time_spent = request.data.get("time_spent")
+        time_spent_str = request.data.get("time_spent")
 
-        if task and time_spent:
-            task.time_spent += time_spent
-            task.save()
-            return Response(
-                {"message": "Time tracked successfully!"}, status=status.HTTP_200_OK
-            )
+        if task and time_spent_str:
+            # Parse the time_spent string to timedelta
+            try:
+                # Assuming time_spent is in "HH:MM:SS" format
+                time_parts = list(map(int, time_spent_str.split(':')))
+                if len(time_parts) == 3:  # HH:MM:SS
+                    time_spent = timedelta(hours=time_parts[0], minutes=time_parts[1], seconds=time_parts[2])
+                elif len(time_parts) == 2:  # MM:SS
+                    time_spent = timedelta(minutes=time_parts[0], seconds=time_parts[1])
+                elif len(time_parts) == 1:  # SS
+                    time_spent = timedelta(seconds=time_parts[0])
+                else:
+                    return Response({"error": "Invalid time format."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Update the task's time_spent
+                task.time_spent += time_spent
+                task.save()
+                return Response(
+                    {"message": "Time tracked successfully!"}, status=status.HTTP_200_OK
+                )
+            except ValueError:
+                return Response({"error": "Invalid time format."}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
