@@ -22,6 +22,7 @@ from scheduler.views import (
     LoginView,
     LogoutView,
     TaskViewSet,
+    TimeTrackingView,
     UserListViewSet,
     UserRegistrationViewSet,
 )
@@ -37,4 +38,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path('tasks/<int:pk>/time-tracking/', TimeTrackingView.as_view({'patch': 'partial_update'}), name='time-tracking'),
 ]

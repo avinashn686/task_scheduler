@@ -119,7 +119,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-MAILJET_API_KEY = '9d551d86e8066f53c63f29e4236b77b5'  # Replace with your actual Mailjet API key
+MAILJET_API_KEY = '9d551d86e8066f53c63f29e4236b77b5'  
 MAILJET_API_SECRET = '953b71c5db8e823a5827d687c80ef043'
 
 import logging
