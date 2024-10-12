@@ -86,6 +86,8 @@ To run this project locally, follow these steps:
 - **PATCH** `/tasks/{id}/time-tracking/`
     - Update time spent on a task.
 
+a postman collection is also added to the repo
+
 ## Usage
 
 1. Register a new user via the registration endpoint.
